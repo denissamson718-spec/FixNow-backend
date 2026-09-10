@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+.expo-web-build-check/
+.npm-cache/
+.git/
+.agents/
+.codex/
+dist/
+.env
+.env.*
+backend/
+web/
+admin-web/
+*.log
+*.apk
+*.aab

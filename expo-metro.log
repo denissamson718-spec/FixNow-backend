@@ -1,0 +1,5 @@
+env: load .env
+env: export EXPO_PUBLIC_BACKEND_URL
+Starting project at E:\BACKU FOLDER\DESKTOP\FixNow
+› Port 8081 is being used by another process
+› Skipping dev server

@@ -1,0 +1,27 @@
+{
+  "name": "fixnow-backend",
+  "version": "1.0.0",
+  "description": "FixNow Backend API Server",
+  "main": "src/server.js",
+  "scripts": {
+    "backend": "node src/server.js",
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "fixnow",
+    "backend",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2",
+    "nodemailer": "^8.0.5"
+  },
+  "engines": {
+    "node": ">=22 <23"
+  }
+}
