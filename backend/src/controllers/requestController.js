@@ -1,8 +1,9 @@
+const { asyncHandler } = require("../utils/asyncHandler");
 const { readDb, writeDb } = require("../data/database");
 const { createCreatedAt, createId } = require("../utils/account");
 
-function listServiceRequests(req, res) {
-  const db = readDb();
+async function listServiceRequests(req, res) {
+  const db = await readDb();
   const role = req.query.role;
   const status = req.query.status;
 
@@ -19,8 +20,8 @@ function listServiceRequests(req, res) {
   res.json({ serviceRequests: requests });
 }
 
-function createServiceRequest(req, res) {
-  const db = readDb();
+async function createServiceRequest(req, res) {
+  const db = await readDb();
   const payload = req.body || {};
   const nextRequest = {
     id: createId("req"),
@@ -46,12 +47,12 @@ function createServiceRequest(req, res) {
   };
 
   db.serviceRequests.unshift(nextRequest);
-  writeDb(db);
+  await writeDb(db);
   res.status(201).json({ success: true, serviceRequest: nextRequest });
 }
 
-function updateServiceRequest(req, res) {
-  const db = readDb();
+async function updateServiceRequest(req, res) {
+  const db = await readDb();
   let updatedRequest;
 
   db.serviceRequests = db.serviceRequests.map((serviceRequest) => {
@@ -72,12 +73,12 @@ function updateServiceRequest(req, res) {
     return;
   }
 
-  writeDb(db);
+  await writeDb(db);
   res.json({ success: true, serviceRequest: updatedRequest });
 }
 
 module.exports = {
-  listServiceRequests,
-  createServiceRequest,
-  updateServiceRequest
+  listServiceRequests: asyncHandler(listServiceRequests),
+  createServiceRequest: asyncHandler(createServiceRequest),
+  updateServiceRequest: asyncHandler(updateServiceRequest)
 };

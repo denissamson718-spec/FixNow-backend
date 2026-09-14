@@ -1,8 +1,9 @@
+const { asyncHandler } = require("../utils/asyncHandler");
 const { readDb, writeDb } = require("../data/database");
 const { createCreatedAt, createId } = require("../utils/account");
 
-function listOffers(req, res) {
-  const db = readDb();
+async function listOffers(req, res) {
+  const db = await readDb();
   const requestId = req.query.requestId;
   const mechanicId = req.query.mechanicId;
 
@@ -19,8 +20,8 @@ function listOffers(req, res) {
   res.json({ offers });
 }
 
-function createOffer(req, res) {
-  const db = readDb();
+async function createOffer(req, res) {
+  const db = await readDb();
   const payload = req.body || {};
   const nextOffer = {
     id: createId("offer"),
@@ -38,12 +39,12 @@ function createOffer(req, res) {
   };
 
   db.offers.unshift(nextOffer);
-  writeDb(db);
+  await writeDb(db);
   res.status(201).json({ success: true, offer: nextOffer });
 }
 
-function updateOffer(req, res) {
-  const db = readDb();
+async function updateOffer(req, res) {
+  const db = await readDb();
   let updatedOffer;
 
   db.offers = db.offers.map((offer) => {
@@ -64,12 +65,12 @@ function updateOffer(req, res) {
     return;
   }
 
-  writeDb(db);
+  await writeDb(db);
   res.json({ success: true, offer: updatedOffer });
 }
 
 module.exports = {
-  listOffers,
-  createOffer,
-  updateOffer
+  listOffers: asyncHandler(listOffers),
+  createOffer: asyncHandler(createOffer),
+  updateOffer: asyncHandler(updateOffer)
 };

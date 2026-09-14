@@ -1,3 +1,4 @@
+const { asyncHandler } = require("../utils/asyncHandler");
 const { readDb, writeDb } = require("../data/database");
 
 /**
@@ -101,18 +102,18 @@ function buildOverview(db) {
   };
 }
 
-function getOverview(req, res) {
+async function getOverview(req, res) {
   try {
-    const db = readDb();
+    const db = await readDb();
     res.json(buildOverview(db));
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get overview", error: error.message });
+    res.status(error.status === 409 ? 409 : 500).json({ success: false, message: "Failed to get overview", error: error.status === 409 ? error.message : "Database request failed." });
   }
 }
 
-function getPendingMechanics(req, res) {
+async function getPendingMechanics(req, res) {
   try {
-    const db = readDb();
+    const db = await readDb();
     const nowTimestamp = Date.now();
     const pendingMechanics = db.accounts
       .filter((account) => account.role === "mechanic" && account.approvalStatus === "pending")
@@ -121,13 +122,13 @@ function getPendingMechanics(req, res) {
 
     res.json({ mechanics: pendingMechanics });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get pending mechanics", error: error.message });
+    res.status(error.status === 409 ? 409 : 500).json({ success: false, message: "Failed to get pending mechanics", error: error.status === 409 ? error.message : "Database request failed." });
   }
 }
 
-function getMechanicById(req, res) {
+async function getMechanicById(req, res) {
   try {
-    const db = readDb();
+    const db = await readDb();
     const nowTimestamp = Date.now();
     const accountId = String(req.params.accountId || "").trim();
     const mechanic = db.accounts.find((account) => account.id === accountId && account.role === "mechanic");
@@ -142,13 +143,13 @@ function getMechanicById(req, res) {
       mechanic: withActivity(mechanic, nowTimestamp)
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to get mechanic details", error: error.message });
+    res.status(error.status === 409 ? 409 : 500).json({ success: false, message: "Failed to get mechanic details", error: error.status === 409 ? error.message : "Database request failed." });
   }
 }
 
-function approveMechanic(req, res) {
+async function approveMechanic(req, res) {
   try {
-    const db = readDb();
+    const db = await readDb();
     let approvedAccount;
 
     db.accounts = db.accounts.map((account) => {
@@ -170,7 +171,7 @@ function approveMechanic(req, res) {
       return;
     }
 
-    writeDb(db);
+    await writeDb(db);
     res.json({
       success: true,
       message: "Mechanic approved successfully.",
@@ -178,14 +179,14 @@ function approveMechanic(req, res) {
       overview: buildOverview(db)
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to approve mechanic", error: error.message });
+    res.status(error.status === 409 ? 409 : 500).json({ success: false, message: "Failed to approve mechanic", error: error.status === 409 ? error.message : "Database request failed." });
   }
 }
 
 module.exports = {
-  getOverview,
-  getPendingMechanics,
-  getMechanicById,
-  approveMechanic,
+  getOverview: asyncHandler(getOverview),
+  getPendingMechanics: asyncHandler(getPendingMechanics),
+  getMechanicById: asyncHandler(getMechanicById),
+  approveMechanic: asyncHandler(approveMechanic),
   buildOverview
 };

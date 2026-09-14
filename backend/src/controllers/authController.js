@@ -1,3 +1,4 @@
+const { asyncHandler } = require("../utils/asyncHandler");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -272,8 +273,8 @@ function renderResetPasswordHtml(token, canReset) {
 </html>`;
 }
 
-function signup(req, res) {
-  const db = readDb();
+async function signup(req, res) {
+  const db = await readDb();
   const profile = req.body.profile || {};
   const role = req.body.role;
   const password = String(req.body.password || "");
@@ -334,7 +335,7 @@ function signup(req, res) {
   };
 
   db.accounts.push(nextAccount);
-  writeDb(db);
+  await writeDb(db);
 
   res.json({
     success: true,
@@ -346,8 +347,8 @@ function signup(req, res) {
   });
 }
 
-function login(req, res) {
-  const db = readDb();
+async function login(req, res) {
+  const db = await readDb();
   const email = normalizeEmail(req.body.email);
   const password = String(req.body.password || "");
   const account = db.accounts.find((item) => normalizeEmail(item.profile.email) === email);
@@ -385,7 +386,7 @@ function login(req, res) {
 }
 
 async function forgotPassword(req, res) {
-  const db = readDb();
+  const db = await readDb();
   const email = normalizeEmail(req.body.email);
 
   if (!email) {
@@ -417,7 +418,7 @@ async function forgotPassword(req, res) {
     createdAt,
     expiresAt
   });
-  writeDb(db);
+  await writeDb(db);
 
   const resetLink = buildResetLink(req, token);
   try {
@@ -439,7 +440,7 @@ async function forgotPassword(req, res) {
         }
 
         db.passwordResetTokens = (db.passwordResetTokens || []).filter((item) => item.token !== token);
-        writeDb(db);
+        await writeDb(db);
 
         res.status(500).json({
           success: false,
@@ -449,7 +450,7 @@ async function forgotPassword(req, res) {
       }
 
       db.passwordResetTokens = (db.passwordResetTokens || []).filter((item) => item.token !== token);
-      writeDb(db);
+      await writeDb(db);
 
       res.status(500).json({
         success: false,
@@ -468,7 +469,7 @@ async function forgotPassword(req, res) {
     }
 
     db.passwordResetTokens = (db.passwordResetTokens || []).filter((item) => item.token !== token);
-    writeDb(db);
+    await writeDb(db);
 
     res.status(500).json({ success: false, message: "Could not send reset email right now. Please try again." });
     return;
@@ -480,21 +481,21 @@ async function forgotPassword(req, res) {
   });
 }
 
-function getResetPasswordPage(req, res) {
+async function getResetPasswordPage(req, res) {
   const token = String(req.query.token || "").trim();
-  const db = readDb();
+  const db = await readDb();
   const beforeCount = (db.passwordResetTokens || []).length;
   const resetRecord = findValidResetToken(db, token);
   const afterCount = (db.passwordResetTokens || []).length;
 
   if (afterCount !== beforeCount) {
-    writeDb(db);
+    await writeDb(db);
   }
 
   res.status(resetRecord ? 200 : 400).send(renderResetPasswordHtml(token, Boolean(resetRecord)));
 }
 
-function resetPassword(req, res) {
+async function resetPassword(req, res) {
   const token = String(req.body.token || "").trim();
   const password = String(req.body.password || "");
   const confirmPassword = String(req.body.confirmPassword || "");
@@ -519,11 +520,11 @@ function resetPassword(req, res) {
     return;
   }
 
-  const db = readDb();
+  const db = await readDb();
   const resetRecord = findValidResetToken(db, token);
 
   if (!resetRecord) {
-    writeDb(db);
+    await writeDb(db);
     res.status(400).json({ success: false, message: "Reset link is invalid or expired. Please request a new one." });
     return;
   }
@@ -532,7 +533,7 @@ function resetPassword(req, res) {
 
   if (accountIndex < 0) {
     db.passwordResetTokens = (db.passwordResetTokens || []).filter((item) => item.token !== token);
-    writeDb(db);
+    await writeDb(db);
     res.status(404).json({ success: false, message: "Account was not found for this reset link." });
     return;
   }
@@ -542,7 +543,7 @@ function resetPassword(req, res) {
     password: password.trim()
   };
   db.passwordResetTokens = (db.passwordResetTokens || []).filter((item) => item.accountId !== resetRecord.accountId);
-  writeDb(db);
+  await writeDb(db);
 
   res.json({
     success: true,
@@ -551,9 +552,9 @@ function resetPassword(req, res) {
 }
 
 module.exports = {
-  signup,
-  login,
-  forgotPassword,
-  getResetPasswordPage,
-  resetPassword
+  signup: asyncHandler(signup),
+  login: asyncHandler(login),
+  forgotPassword: asyncHandler(forgotPassword),
+  getResetPasswordPage: asyncHandler(getResetPasswordPage),
+  resetPassword: asyncHandler(resetPassword)
 };

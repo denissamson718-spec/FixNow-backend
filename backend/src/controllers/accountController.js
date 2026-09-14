@@ -1,3 +1,4 @@
+const { asyncHandler } = require("../utils/asyncHandler");
 const { readDb, writeDb } = require("../data/database");
 
 function withoutEmbeddedDocumentData(asset) {
@@ -27,13 +28,13 @@ function toAccountListItem(account) {
   };
 }
 
-function listAccounts(req, res) {
-  const db = readDb();
+async function listAccounts(req, res) {
+  const db = await readDb();
   res.json({ accounts: db.accounts.map(toAccountListItem) });
 }
 
-function getAccountById(req, res) {
-  const db = readDb();
+async function getAccountById(req, res) {
+  const db = await readDb();
   const account = db.accounts.find((item) => item.id === req.params.accountId);
 
   if (!account) {
@@ -44,8 +45,8 @@ function getAccountById(req, res) {
   res.json({ account });
 }
 
-function updateAccountLocation(req, res) {
-  const db = readDb();
+async function updateAccountLocation(req, res) {
+  const db = await readDb();
   let updatedAccount;
 
   db.accounts = db.accounts.map((account) => {
@@ -71,12 +72,12 @@ function updateAccountLocation(req, res) {
     return;
   }
 
-  writeDb(db);
+  await writeDb(db);
   res.json({ success: true, account: updatedAccount });
 }
 
-function updateAccountTransportMode(req, res) {
-  const db = readDb();
+async function updateAccountTransportMode(req, res) {
+  const db = await readDb();
   const allowedTransportModes = ["walking", "bicycle", "motorcycle", "car", "tow-truck"];
   const nextTransportMode = typeof req.body.transportMode === "string" ? req.body.transportMode.trim() : "";
   let updatedAccount;
@@ -112,13 +113,13 @@ function updateAccountTransportMode(req, res) {
     return;
   }
 
-  writeDb(db);
+  await writeDb(db);
   res.json({ success: true, account: updatedAccount });
 }
 
 module.exports = {
-  listAccounts,
-  getAccountById,
-  updateAccountLocation,
-  updateAccountTransportMode
+  listAccounts: asyncHandler(listAccounts),
+  getAccountById: asyncHandler(getAccountById),
+  updateAccountLocation: asyncHandler(updateAccountLocation),
+  updateAccountTransportMode: asyncHandler(updateAccountTransportMode)
 };

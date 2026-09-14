@@ -13,8 +13,13 @@ const requestRoutes = require("./requestRoutes");
 
 const router = express.Router();
 
-router.get("/health", (req, res) => {
-  res.json({ ok: true });
+router.get("/health", async (req, res) => {
+  try {
+    const storage = await require("../data/database").checkDatabase();
+    res.json({ ok: true, storage });
+  } catch {
+    res.status(503).json({ ok: false, message: "Database unavailable." });
+  }
 });
 
 router.use("/accounts", accountRoutes);

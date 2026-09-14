@@ -6,7 +6,10 @@
   "scripts": {
     "backend": "node src/server.js",
     "start": "node src/server.js",
-    "dev": "node src/server.js"
+    "dev": "node src/server.js",
+    "db:check": "node scripts/database.js",
+    "db:import": "node scripts/database.js import",
+    "test": "node test/storage.test.js"
   },
   "keywords": [
     "fixnow",
@@ -19,7 +22,8 @@
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
-    "nodemailer": "^8.0.5"
+    "nodemailer": "^8.0.5",
+    "pg": "^8.23.0"
   },
   "engines": {
     "node": ">=22 <23"
