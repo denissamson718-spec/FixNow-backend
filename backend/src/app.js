@@ -27,6 +27,8 @@ app.get("/", (req, res) => {
 
 app.use("/api/uploads", express.static(uploadsDir));
 app.use("/api", apiRoutes);
+// Older dashboard bundles resolve API paths relative to /admin/.
+app.use("/admin/api", apiRoutes);
 const adminWebDir = path.join(projectRoot, "web", "dist");
 const adminIndex = path.join(adminWebDir, "index.html");
 if (fs.existsSync(adminIndex)) {
