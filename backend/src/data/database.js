@@ -30,7 +30,7 @@ function getPool() {
     if (!["postgres:", "postgresql:"].includes(url.protocol)) throw new Error();
   } catch { throw new Error("DATABASE_URL must be a PostgreSQL connection string."); }
   if (!url.password || /YOUR.?PASSWORD|REPLACE_WITH/i.test(decodeURIComponent(url.password))) {
-    throw new Error("Replace the password placeholder in backend/.env.");
+    throw new Error("Replace the password placeholder in DATABASE_URL.");
   }
   for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert"]) url.searchParams.delete(key);
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);

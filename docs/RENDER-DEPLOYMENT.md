@@ -71,7 +71,7 @@ Open the service → **Environment → Add Environment Variable**, then **Save, 
 | `SMTP_FROM` | `FixNow <your-verified-sender@example.com>` |
 | `PUBLIC_BASE_URL` | Optional: actual HTTPS backend URL; set this if using a custom domain |
 
-Do not enter quotes around dashboard values. Do not set `PORT`: Render supplies it. No `DATABASE_URL` is needed. Render automatically supplies `RENDER_EXTERNAL_URL`, which the backend uses for emailed reset links when `PUBLIC_BASE_URL` is unset.
+Do not enter quotes around dashboard values. Do not set `PORT`: Render supplies it. Set `DATABASE_URL` in Render Environment if this service should use Supabase; copy the complete, current Session pooler connection string and percent-encode reserved characters in its password. Without `DATABASE_URL`, the service uses JSON storage on its persistent disk. Render automatically supplies `RENDER_EXTERNAL_URL`, which the backend uses for emailed reset links when `PUBLIC_BASE_URL` is unset.
 
 For Gmail, use `smtp.gmail.com`, port `587`, secure `false`, your full Gmail address, and an app password if your account supports one. Use that same address in `SMTP_FROM`. A normal account password may not work. Other SMTP providers should supply their own exact values.
 
@@ -113,6 +113,7 @@ The dashboard's displayed demo credentials are present only in the local JSON fi
 - Reset email fails: inspect logs and verify SMTP credentials, sender and port. Free instances block common SMTP ports; returning reset links is disabled in production intentionally.
 - `/admin` gives 404: confirm the web build completed and `web/dist/index.html` exists in the deployed service.
 - Existing local users missing: the persistent disk starts empty. Local data is not automatically imported.
+- Supabase rejects the database credentials: check `DATABASE_URL` in the Render service Environment. The local `backend/.env` is not deployed. Reset the database password in Supabase if needed, then update the Render value and redeploy.
 - Take private backups of the entire data directory, including uploads. Keep backups outside the service and verify restores. Disk-backed services have deployment downtime; plan updates accordingly.
 - Growing usage: migrate to a managed database and private object storage before horizontal scaling. A disk keeps files across redeploys but does not solve authorization, concurrency, or backup strategy.
 
