@@ -1,8 +1,9 @@
 const cors = require("cors");
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 
-const { uploadsDir } = require("./config/paths");
+const { projectRoot, uploadsDir } = require("./config/paths");
 const { errorHandler } = require("./middleware/errorHandler");
 const { notFoundHandler } = require("./middleware/notFound");
 const apiRoutes = require("./routes");
@@ -26,17 +27,15 @@ app.get("/", (req, res) => {
 
 app.use("/api/uploads", express.static(uploadsDir));
 app.use("/api", apiRoutes);
-app.get("/admin", (req, res) => {
-  const adminUrl = process.env.ADMIN_WEB_URL || (process.env.NODE_ENV !== "production" ? "http://localhost:3000" : "");
-  if (!adminUrl) return res.status(404).json({ message: "Admin dashboard is hosted separately. Set ADMIN_WEB_URL after deploying it." });
-  res.redirect(302, adminUrl);
-});
-
-app.get("/admin/*", (req, res) => {
-  const adminUrl = process.env.ADMIN_WEB_URL || (process.env.NODE_ENV !== "production" ? "http://localhost:3000" : "");
-  if (!adminUrl) return res.status(404).json({ message: "Admin dashboard is hosted separately. Set ADMIN_WEB_URL after deploying it." });
-  res.redirect(302, adminUrl);
-});
+const adminWebDir = path.join(projectRoot, "web", "dist");
+const adminIndex = path.join(adminWebDir, "index.html");
+if (fs.existsSync(adminIndex)) {
+  app.get("/admin", (req, res) => res.redirect(302, "/admin/"));
+  app.use("/admin", express.static(adminWebDir));
+  app.get(["/admin/login", "/admin/dashboard", "/admin/dashboard/*"], (req, res) => res.sendFile(adminIndex));
+} else if (process.env.NODE_ENV !== "production") {
+  app.get("/admin", (req, res) => res.redirect(302, "http://localhost:3000/admin/"));
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -1,6 +1,6 @@
-# Deploy FixNow backend to Render
+# Deploy FixNow backend and admin dashboard to Render
 
-The repository includes `render.yaml` for this backend. Nothing has been deployed to your Render account yet. Use either the Blueprint method or the manual method below, not both.
+The repository includes `render.yaml` for one service that serves the API and admin dashboard. Use either the Blueprint method or the manual method below, not both.
 
 ## Before deploying
 
@@ -8,7 +8,7 @@ This backend uses a JSON database and uploaded files, not PostgreSQL or MongoDB.
 
 **Public launch blockers:** the existing application stores passwords in plain text, has no server-side session/token authorization on account/admin operations, and serves uploaded identity documents publicly. These require application security changes before collecting real user data. Deploy with synthetic test data only until fixed. Payments and other existing demo behavior do not become real payment integrations by hosting the API.
 
-1. Put the project in a private GitHub repository accessible to Render. Include the backend source, `backend/package.json`, `backend/package-lock.json`, and root `render.yaml`.
+1. Put the project in a private GitHub repository accessible to Render. Include `backend/`, `web/`, and the root `render.yaml`.
 2. Exclude `.env`, `backend/.env`, `node_modules`, and `backend/data`. The ignore rules now cover runtime data. If those files were already tracked, `.gitignore` does not untrack them: remove them from tracking before pushing. If secrets were previously published, rotate them.
 3. Have your SMTP provider's host, port, username, password and verified sender ready. Keep the password in Render, never in source control.
 4. This deployment starts with an empty database. It does not copy local accounts/documents. Preserve a private backup of `backend/data` if you need a later controlled migration.
@@ -39,9 +39,9 @@ The Blueprint creates one Node service in Frankfurt with a disk mounted at `/var
 | Branch | Your branch containing the prepared changes |
 | Region | Frankfurt (or your chosen region) |
 | Language / Runtime | Node |
-| Root Directory | `backend` |
-| Build Command | `npm ci --omit=dev` |
-| Start Command | `npm start` |
+| Root Directory | Repository root (leave blank) |
+| Build Command | `npm ci --prefix backend --omit=dev && npm ci --prefix web && npm run build --prefix web` |
+| Start Command | `npm start --prefix backend` |
 | Instance Type | Paid 0.5 CPU / 512 MB or larger |
 | Health Check Path (Advanced) | `/api/health` |
 
@@ -70,7 +70,6 @@ Open the service → **Environment → Add Environment Variable**, then **Save, 
 | `SMTP_PASS` | Your SMTP password / app password |
 | `SMTP_FROM` | `FixNow <your-verified-sender@example.com>` |
 | `PUBLIC_BASE_URL` | Optional: actual HTTPS backend URL; set this if using a custom domain |
-| `ADMIN_WEB_URL` | Optional: deployed admin frontend URL |
 
 Do not enter quotes around dashboard values. Do not set `PORT`: Render supplies it. No `DATABASE_URL` is needed. Render automatically supplies `RENDER_EXTERNAL_URL`, which the backend uses for emailed reset links when `PUBLIC_BASE_URL` is unset.
 
@@ -91,27 +90,28 @@ For Gmail, use `smtp.gmail.com`, port `587`, secure `false`, your full Gmail add
 
 ## Admin dashboard
 
-Deploying this backend does not deploy `web/`. Until an admin frontend is hosted, you can keep running it locally. Change the `/api` proxy `target` in `web/vite.config.ts` to the actual HTTPS Render backend URL, then restart `cd web && npm run dev`.
+The same service builds `web/` and serves it at `https://YOUR-ACTUAL-SERVICE.onrender.com/admin/`. Dashboard API requests use `/api` on that same host. Remove any old `ADMIN_WEB_URL` setting; it is no longer needed.
 
-For a separately hosted dashboard, it needs a production `/api` proxy or configurable API base URL; Vite's development proxy is not included in the built frontend. Set `ADMIN_WEB_URL` only after that frontend works. This variable controls the backend's `/admin` redirect; it does not host or configure the frontend itself.
+The dashboard's displayed demo credentials are present only in the local JSON file. They are not copied to Render. To create an admin in the storage the deployed backend actually uses, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the Render service Environment, deploy, then run `npm run admin:create --prefix backend` in that service's Shell. The command refuses to overwrite an existing email. Remove `ADMIN_PASSWORD` from Render Environment after the account is created. If `/api/health` reports `storage: "postgres"`, this writes to PostgreSQL; if it reports `storage: "json"`, it writes to the persistent disk. Use a unique password rather than the published demo password.
 
 ## Verify the deployment
 
 1. Open `https://YOUR-ACTUAL-SERVICE.onrender.com/api/health`: expect `{"ok":true}`.
 2. Open the service root `/`: expect the FixNow backend JSON response.
-3. Register a synthetic driver in the app and log in again.
-4. Register a synthetic mechanic with dummy credential files; confirm the admin dashboard can display the uploads and approve the mechanic.
-5. Exercise a service request and offer from driver/mechanic accounts.
-6. Request a password reset for an email inbox you control. Confirm the email arrives, its link uses the Render HTTPS URL, and the new password works. SMTP delivery has to be checked with your real credentials.
-7. Use **Manual Deploy → Deploy latest commit**, then repeat login and upload viewing. Records and files must survive redeployment. If they disappear, verify both the disk mount and `DATA_DIR` immediately.
+3. Open `/admin/` and sign in with the admin account created above.
+4. Register a synthetic driver in the app and log in again.
+5. Register a synthetic mechanic with dummy credential files; confirm the admin dashboard can display the uploads and approve the mechanic.
+6. Exercise a service request and offer from driver/mechanic accounts.
+7. Request a password reset for an email inbox you control. Confirm the email arrives, its link uses the Render HTTPS URL, and the new password works. SMTP delivery has to be checked with your real credentials.
+8. Use **Manual Deploy → Deploy latest commit**, then repeat login and upload viewing. Records and files must survive redeployment. If they disappear, verify both the disk mount and `DATA_DIR` immediately.
 
 ## Operating notes and troubleshooting
 
-- Build cannot find package.json: Root Directory must be `backend`, not `backend/src`.
-- No open port: check start logs; start command is `npm start`. The server binds to `0.0.0.0` and Render's `PORT`.
+- Build cannot find `web/` or `backend/`: Root Directory must be the repository root.
+- No open port: check start logs; start command is `npm start --prefix backend`. The server binds to `0.0.0.0` and Render's `PORT`.
 - Mobile network error: check the HTTPS URL, remove `/api` suffix, restart Expo or rebuild the APK.
 - Reset email fails: inspect logs and verify SMTP credentials, sender and port. Free instances block common SMTP ports; returning reset links is disabled in production intentionally.
-- `/admin` gives 404: the frontend is hosted separately; configure `ADMIN_WEB_URL` after hosting it.
+- `/admin` gives 404: confirm the web build completed and `web/dist/index.html` exists in the deployed service.
 - Existing local users missing: the persistent disk starts empty. Local data is not automatically imported.
 - Take private backups of the entire data directory, including uploads. Keep backups outside the service and verify restores. Disk-backed services have deployment downtime; plan updates accordingly.
 - Growing usage: migrate to a managed database and private object storage before horizontal scaling. A disk keeps files across redeploys but does not solve authorization, concurrency, or backup strategy.

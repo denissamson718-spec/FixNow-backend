@@ -9,6 +9,7 @@
     "dev": "node src/server.js",
     "db:check": "node scripts/database.js",
     "db:import": "node scripts/database.js import",
+    "admin:create": "node scripts/create-admin.js",
     "test": "node test/storage.test.js"
   },
   "keywords": [

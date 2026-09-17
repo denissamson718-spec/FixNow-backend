@@ -4,9 +4,8 @@ services:
     runtime: node
     plan: 0.5c-512mb
     region: frankfurt
-    rootDir: backend
-    buildCommand: npm ci --omit=dev
-    startCommand: npm start
+    buildCommand: npm ci --prefix backend --omit=dev && npm ci --prefix web && npm run build --prefix web
+    startCommand: npm start --prefix backend
     healthCheckPath: /api/health
     numInstances: 1
     disk:

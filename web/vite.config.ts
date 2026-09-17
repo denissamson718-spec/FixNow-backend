@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
   const target = (webEnv.VITE_API_URL?.trim() || appEnv.EXPO_PUBLIC_BACKEND_URL?.trim() || 'http://127.0.0.1:4010').replace(/\/$/, '')
 
   return {
+  base: '/admin/',
   plugins: [react()],
   server: {
     port: 3000,

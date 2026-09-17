@@ -86,9 +86,7 @@ export default function LoginPage({ setIsAuthenticated }: LoginPageProps) {
         </form>
 
         <div className="login-footer">
-          <p>Demo credentials:</p>
-          <p>Email: <code>admin@fixnow.local</code></p>
-          <p>Password: <code>Admin@12345</code></p>
+          <p>Sign in with the admin account configured for this backend.</p>
         </div>
       </div>
     </div>
